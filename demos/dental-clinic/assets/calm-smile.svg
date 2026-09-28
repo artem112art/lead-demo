@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 820" role="img" aria-labelledby="title desc">
+  <title id="title">Спокойная абстрактная композиция</title>
+  <desc id="desc">Мягкие органические формы в светлых природных оттенках.</desc>
+  <rect width="680" height="820" fill="#dce8e3"/>
+  <circle cx="476" cy="206" r="196" fill="#f7f3ec" opacity=".8"/>
+  <path d="M84 820V443c0-132 107-239 239-239s239 107 239 239v377Z" fill="#b9cec6"/>
+  <path d="M167 820V482c0-89 72-161 161-161s161 72 161 161v338Z" fill="#fffdf9"/>
+  <path d="M254 404c19-15 43-24 69-24 28 0 54 10 73 27" fill="none" stroke="#bc7f68" stroke-linecap="round" stroke-width="9"/>
+  <path d="M237 518c26 35 58 52 96 52s71-18 99-55" fill="none" stroke="#273b38" stroke-linecap="round" stroke-width="7"/>
+  <circle cx="271" cy="475" r="7" fill="#273b38"/>
+  <circle cx="395" cy="475" r="7" fill="#273b38"/>
+  <path d="M0 654c96-62 180-70 252-23 73 48 154 44 242-13 58-38 120-45 186-23v225H0Z" fill="#eae2d5" opacity=".9"/>
+</svg>

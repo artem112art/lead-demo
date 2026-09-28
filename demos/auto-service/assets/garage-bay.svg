@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 760" role="img" aria-labelledby="title desc">
+  <title id="title">Автомобиль в сервисном боксе</title>
+  <desc id="desc">Геометрическая оранжево-чёрная иллюстрация автомобиля на подъёмнике.</desc>
+  <rect width="760" height="760" fill="#15191c"/>
+  <path d="M0 116 760 0v72L0 188zM0 638l760-116v92L0 730z" fill="#ff5a1f" opacity=".9"/>
+  <g stroke="#343a3f" stroke-width="2" opacity=".8">
+    <path d="M95 0v760M190 0v760M285 0v760M380 0v760M475 0v760M570 0v760M665 0v760"/>
+    <path d="M0 95h760M0 190h760M0 285h760M0 380h760M0 475h760M0 570h760M0 665h760"/>
+  </g>
+  <path d="M130 452h54l54-112c13-27 40-44 70-44h160c27 0 52 14 66 37l72 119h38c22 0 40 18 40 40v72H98v-80c0-18 14-32 32-32Z" fill="#e9eae5"/>
+  <path d="m258 344-43 108h334l-63-108a38 38 0 0 0-33-19H294c-16 0-30 8-36 19Z" fill="#22272b"/>
+  <path d="M255 384h248" stroke="#ff5a1f" stroke-width="9"/>
+  <circle cx="213" cy="553" r="55" fill="#0a0c0e" stroke="#6d7478" stroke-width="12"/>
+  <circle cx="213" cy="553" r="15" fill="#ff5a1f"/>
+  <circle cx="548" cy="553" r="55" fill="#0a0c0e" stroke="#6d7478" stroke-width="12"/>
+  <circle cx="548" cy="553" r="15" fill="#ff5a1f"/>
+  <path d="M90 620h580" stroke="#f3f4ef" stroke-width="10"/>
+  <path d="M155 620v74m450-74v74" stroke="#ff5a1f" stroke-width="18"/>
+</svg>
