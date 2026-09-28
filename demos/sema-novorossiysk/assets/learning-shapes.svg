@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 620" role="img" aria-labelledby="title desc">
+  <title id="title">Абстрактная композиция для детского центра</title>
+  <desc id="desc">Мягкие геометрические формы, открытая книга, линии и звёзды.</desc>
+  <path d="M121 169c0-68 55-123 123-123s123 55 123 123c0 27-9 52-24 72 64 12 112 68 112 135 0 76-62 138-138 138H145C69 514 7 452 7 376c0-65 45-120 106-135-7-23-9-47-2-72Z" fill="#fffaf0"/>
+  <path d="M137 222c34-26 76-33 126-20v193c-48-20-90-14-126 16V222Z" fill="#506bc9"/>
+  <path d="M389 222c-34-26-76-33-126-20v193c48-20 90-14 126 16V222Z" fill="#f4775f"/>
+  <path d="M263 202v193" stroke="#1f2b28" stroke-width="6" stroke-linecap="round"/>
+  <path d="M166 256c22-11 45-14 69-8M166 289c22-11 45-14 69-8M291 248c24-6 47-3 69 8M291 281c24-6 47-3 69 8" fill="none" stroke="#fffaf0" stroke-width="8" stroke-linecap="round" opacity=".78"/>
+  <path d="m455 101 11 23 25 4-18 18 4 25-22-12-23 12 5-25-18-18 25-4 11-23Z" fill="#f3c95f" stroke="#1f2b28" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="91" cy="132" r="30" fill="#f4775f"/>
+  <path d="M66 487c40 44 83 70 130 78M393 482c-29 42-65 69-109 83" fill="none" stroke="#39715e" stroke-width="8" stroke-linecap="round" stroke-dasharray="1 22"/>
+  <path d="M109 422c-16 30-14 56 7 79 29-4 48-22 56-53-17-24-38-33-63-26Z" fill="#f3c95f"/>
+  <path d="M399 419c28 9 44 29 49 60-19 22-43 30-72 22-14-29-6-56 23-82Z" fill="#bfe1cf" stroke="#1f2b28" stroke-width="4"/>
+  <circle cx="207" cy="117" r="16" fill="#bfe1cf" stroke="#1f2b28" stroke-width="4"/>
+  <path d="M325 106c25 2 44 13 57 33" fill="none" stroke="#1f2b28" stroke-width="5" stroke-linecap="round"/>
+</svg>
