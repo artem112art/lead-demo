@@ -1,35 +1,37 @@
-# TOP-20 для персональных demo
+# TOP-20 после independent-site recheck
 
-Срез: 2026-09-29. Эти 20 кандидатов прошли усиленную проверку: официальный публичный сайт, live-проверка на ширине 360 px и 1440 px, признак существующего бизнеса и отдельный источник Yandex Maps. Во всех 20 случаях горизонтальный overflow не обнаружен. Основной разрыв — не техническая адаптивность, а одинаковый конструктор Yandex Business, слабая дифференциация, неглубокая архитектура доверия и общий CTA вместо собственного пути клиента.
+Срез: 2026-09-29. Это исправляющий второй проход по прежнему TOP-20. `clients.site` больше не считается доказательством слабого основного сайта.
 
-## Рейтинг
+Для каждого кандидата применены минимум два независимых подхода:
 
-| Место | ID | Компания | Ниша / город | Score | Бизнес-сигнал | Mobile / visual audit | Официальная страница | Доп. источник |
-|---:|---|---|---|---:|---|---|---|---|
-| 1 | L022 | Becker | Мебель на заказ / Санкт-Петербург | 9.6 | 4.9; 1911 отзывов; Telegram и VK | 360/1440: overflow нет; generic hero; каталог с позицией за 1 ₽; отсутствуют кейсовая галерея и квиз расчета | [clients.site](https://becker.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/76401982575) |
-| 2 | L001 | Good-Avto | Автосервис / Санкт-Петербург | 9.5 | 5.0; 1473 отзыва; действующий адрес | 360/1440: overflow нет; повторяющиеся блоки О нас / Акции / Каталог / Отзывы; нет проблемно-ориентированной записи | [clients.site](https://good-avto.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/127071004454) |
-| 3 | L079 | Елховка SPA | Загородный отдых / Нижегородская область | 9.4 | 5.0; 576 отзывов; Telegram и WhatsApp | 360/1440: overflow нет; страница не передает атмосферу объекта; нет подбора домика и дат | [clients.site](https://elhovka-spa.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/150331808043) |
-| 4 | L012 | Реюньон | Стоматология / Москва | 9.3 | 5.0; 207 отзывов; Telegram | 360/1440: overflow нет; типовая структура; нет маршрутов по проблемам пациента и сильных профилей врачей | [clients.site](https://rejunon.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/1098362825) |
-| 5 | L051 | Mami Beauty Room | Косметология / Москва | 9.2 | 5.0; 121 отзыв; WhatsApp и VK | 360/1440: overflow нет; generic layout не передает премиальность; слабые блоки экспертизы и результатов | [clients.site](https://mami-beauty.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/138800249092) |
-| 6 | L045 | Профи-Потолков | Натяжные потолки / Санкт-Петербург | 9.1 | 4.9; 94 отзыва; Telegram | 360/1440: overflow нет; есть вызов специалиста, но нет калькулятора, сценариев по помещениям и сильного портфолио | [clients.site](https://profi-potolkov.clients.site/filter-category/natyazhnye-potolki-zamer-izgotovlenie-montazh) | [Yandex Maps](https://yandex.ru/maps/org/152915882153) |
-| 7 | L076 | BURO Бизнес Консалтинг | Юридические и бухгалтерские услуги / Смоленск | 9.0 | 4.8; 43 отзыва; публичные мессенджеры | 360/1440: overflow нет; услуги перечислены, но не собраны в решения по типу клиента; нет B2B-кейсов | [clients.site](https://juridicheskie-uslugi-biznes-konsalting.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/1567941009) |
-| 8 | L061 | Сёма | Детский центр / Новороссийск | 8.9 | 5.0; 92 отзыва; Telegram и WhatsApp | 360/1440: overflow нет; нет структуры по возрастам, расписания и убедительных профилей педагогов | [clients.site](https://sema-prospekt-dzerzhinskogo.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/1040365511) |
-| 9 | L094 | МЗ Синергия | Металлообработка / Санкт-Петербург | 8.8 | 4.3; 43 отзыва; действующее производство | 360/1440: overflow нет; всего четыре базовых раздела; нет инженерных кейсов, допусков и загрузки чертежа | [clients.site](https://mz-sinergija.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/1176036222) |
-| 10 | L083 | Villa Volga | Гостиница / Конаково | 8.7 | 4.9; 173 отзыва; действующий объект | 360/1440: overflow нет; не продается локация у Волги; нет выбора номера по датам и пакетных предложений | [clients.site](https://villa-volga-pervomajskaja-ulitsa.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/1889479073) |
-| 11 | L013 | Имплант Профи | Стоматология / Москва | 8.6 | 5.0; 248 отзывов; WhatsApp и VK | 360/1440: overflow нет; сложная услуга подана каталогом; нет пошагового пути и доказательств врача | [clients.site](https://implant-profi.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/234828234730) |
-| 12 | L014 | Атмосфера | Стоматология / Красноярск | 8.5 | 5.0; 52 отзыва; Telegram и VK | 360/1440: overflow нет; есть акции, но нет спокойной премиальной структуры и ответов на страхи пациента | [clients.site](https://atmosfera-dental.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/157522007725) |
-| 13 | L055 | OMA Clinic | Косметология / Химки | 8.4 | 4.9; 41 отзыв; Telegram и VK | 360/1440: overflow нет; каталог и корзина не заменяют консультационную воронку; слабый медицинский trust layer | [clients.site](https://omaclinic.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/209015605634) |
-| 14 | L049 | GreenDoor | Двери / Щёлково | 8.3 | 5.0; 77 отзывов; Telegram | 360/1440: overflow нет; каталог не раскрывает производство, материалы, замер и монтаж | [clients.site](https://fabrika-dverej-grendoor.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/12657708892) |
-| 15 | L080 | NeBali Country Club | Загородный отдых / Московская область | 8.2 | 5.0; 375 отзывов; Telegram и VK | 360/1440: overflow нет; нет выбора сценария отдыха и прямого бронирования по датам | [clients.site](https://nebali.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/115911413122) |
-| 16 | L081 | Soloh SPA Village | Загородный отдых / Сочи | 8.1 | 5.0; 568 отзывов; Telegram и VK | 360/1440: overflow нет; много однотипных элементов; не выделены пакеты и прямое бронирование | [clients.site](https://soloh-spa-village.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/102426497078) |
-| 17 | L084 | Усадьба Соловьи | Загородный отдых / Нижегородская область | 8.0 | 4.8; 133 отзыва; Telegram и VK | 360/1440: overflow нет; нет эмоционального рассказа о месте и прозрачного сценария бронирования | [clients.site](https://usadba-solovi.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/1118665541) |
-| 18 | L064 | Центр имени Хелен Келлер | Развитие речи и слуха / Москва | 7.9 | 5.0; 33 отзыва; Telegram и VK | 360/1440: overflow нет; только три содержательных раздела; не объяснен путь помощи семье | [clients.site](https://helenkellercentr.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/83665767595) |
-| 19 | L091 | LeFitness | Фитнес-студия / Казань | 7.8 | 5.0; 53 отзыва; Telegram и VK | 360/1440: overflow нет; generic layout; методика, тренеры и пробное занятие не собраны в одну воронку | [clients.site](https://lefitness.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/76466341176) |
-| 20 | L067 | Разноцветные цыплята | Детский центр / Москва | 7.7 | 5.0; 53 отзыва; Telegram и VK | 360/1440: overflow нет; яркий нейминг теряется в типовом шаблоне; нет программ по возрастам | [clients.site](https://raznotsvetnye-tsypljata-1684174999.clients.site/) | [Yandex Maps](https://yandex.ru/maps/org/111514227448) |
+1. точное название + город и/или адрес;
+2. точный телефон и/или бренд, публичная соцсеть и ссылки из карточек.
 
-## Общие выводы проверки
+Найденные самостоятельные домены открывались в live Chromium на `360 × 900` и `1440 × 900`; проверялись identity, загрузка, horizontal overflow, CTA, структура и актуальность. Детальный root cause и evidence ledger: [`independent_site_recheck.md`](./independent_site_recheck.md).
 
-1. Все 20 страниц технически адаптивны на проверенных ширинах, поэтому продавать им нужно не «мобильную версию», а собственный бренд, более ясную структуру и измеримую воронку.
-2. На всех 20 страницах обнаружена ссылка или подпись Yandex Business; структура повторяет один и тот же набор блоков: каталог, отзывы, фото, контакты, иногда акции и «О нас».
-3. Самые сильные экономические сигналы: высокий чек, большой объем публичных отзывов, повторная выручка или потенциально дорогой B2B-лид.
-4. Оценка не утверждает, что компания обязательно купит сайт. Она показывает относительный приоритет для ручного персонального предложения.
+| Rank | ID | Company | Niche / city | Independent status | Primary website | Live audit / identity result | New score | Decision |
+|---:|---|---|---|---|---|---|---:|---|
+| 1 | L014 | Атмосфера | Стоматология / Красноярск | FOUND_BROKEN | [atmosfera-dental.ru](https://atmosfera-dental.ru/) | Exact phone/address; Chrome connection closed at both widths; TLS failure; indexed copy says site may be outdated/under development | 9.7 | KEEP |
+| 2 | L061 | Сёма | Детский центр / Новороссийск | FOUND_BROKEN | [novoros.semaclub.ru](https://novoros.semaclub.ru/) | Exact branch/address; local domain redirects to semaclub.ru, currently an unrelated mortgage page | 9.6 | KEEP |
+| 3 | L079 | Елховка SPA | Загородный отдых / Елховка | NOT_FOUND | [clients.site](https://elhovka-spa.clients.site/) | Name/location plus phone search found only listing, maps, aggregators and social/contact pages | 9.5 | KEEP |
+| 4 | L051 | Mami Beauty Room | Косметология / Москва | NOT_FOUND | [clients.site](https://mami-beauty.clients.site/) | Name/address plus phone search found no owned domain | 9.4 | KEEP |
+| 5 | L076 | BURO Бизнес Консалтинг | B2B-услуги / Смоленск | NOT_FOUND | [clients.site](https://juridicheskie-uslugi-biznes-konsalting.clients.site/) | Name/address and phone/messenger searches found no credible owned domain | 9.3 | KEEP |
+| 6 | L049 | GreenDoor | Двери / Щёлково | FOUND_BROKEN | [greendoorrussia.ru](https://greendoorrussia.ru/) | Exact phone/address; HTTP/HTTPS and TLS live checks fail | 9.2 | KEEP |
+| 7 | L083 | Villa Volga | Гостиница / Конаково | NOT_FOUND | [clients.site](https://villa-volga-pervomajskaja-ulitsa.clients.site/) | Name/address plus phone search found listings and travel aggregators only | 9.1 | KEEP |
+| 8 | L084 | Усадьба Соловьи | Загородный отдых / Малое Козино | FOUND_BROKEN | [solovi-usadba.ru](https://solovi-usadba.ru/) | Exact phone/address; current site gives HTTP/2 protocol error, older official IDN times out | 9.0 | KEEP |
+| 9 | L055 | OMA Clinic | Косметология / Химки | NOT_FOUND | [clients.site](https://omaclinic.clients.site/) | Name/location and phone search found listing/directories/socials only | 8.9 | KEEP |
+| 10 | L091 | LeFitness | Фитнес / Казань | NOT_FOUND | [clients.site](https://lefitness.clients.site/) | Exact phone/address and social search found no owned independent domain | 8.8 | KEEP |
+| 11 | L013 | Имплант Профи | Стоматология / Москва | UNCERTAIN | [clients.site](https://implant-profi.clients.site/) | implantprofi.ru is good, but phone/locations do not match this lead; identity unresolved | 4.0 | DROP |
+| 12 | L094 | МЗ Синергия | Металлообработка / Санкт-Петербург | FOUND_GOOD | [mz-sinergia.ru](https://mz-sinergia.ru/) | Exact phone/company; clear B2B offer, services, ERP/ISO, products and quote flow; minor 392 px mobile scrollWidth | 2.8 | DROP |
+| 13 | L022 | Becker | Мебель / Санкт-Петербург | FOUND_GOOD | [kuhni-becker-spb.ru](https://kuhni-becker-spb.ru/) | Brand/location match; responsive offer, calculator, forms and warranty | 2.6 | DROP |
+| 14 | L064 | Центр имени Хелен Келлер | Речь и слух / Москва | FOUND_GOOD | [логопед-центр.рф](https://логопед-центр.рф/) | Exact phone/address; responsive directions, specialists, reviews, materials and consultation CTA | 2.5 | DROP |
+| 15 | L012 | Реюньон | Стоматология / Москва | FOUND_GOOD | [reunion-clinic.ru](https://reunion-clinic.ru/) | Exact brand/address; current prices, doctors, services and appointment forms | 2.4 | DROP |
+| 16 | L045 | Профи-Потолков | Натяжные потолки / Санкт-Петербург | FOUND_GOOD | [profi-potolkov.ru](https://profi-potolkov.ru/) | Exact identity; catalogue, gallery, calculator, measurement CTA and forms | 2.2 | DROP |
+| 17 | L080 | NeBali Country Club | Загородный отдых / Московская область | FOUND_GOOD | [глав-курорт.рф](https://глав-курорт.рф/) | Exact phone/property; villas, dates/guests and online booking; no overflow | 1.9 | DROP |
+| 18 | L001 | Good-Avto | Автосервис / Санкт-Петербург | FOUND_GOOD | [good-avto.com](https://good-avto.com/) | Exact phone/address; 10 centers, prices, guarantees and booking forms | 1.8 | DROP |
+| 19 | L081 | Soloh SPA Village | Загородный отдых / Сочи | FOUND_GOOD | [soloh.ru](https://soloh.ru/) | Exact phone/address; current 2026 offers and direct booking | 1.7 | DROP |
+| 20 | L067 | Разноцветные цыплята | Детский центр / Москва | FOUND_GOOD | [branch page](https://color-chicks.ru/msk/rechnoy-vokzal/) | Exact phone/address; programs, specialists, prices and conversion forms | 1.6 | DROP |
+
+## Вывод
+
+Прежний TOP-20 не был authoritative: **9 из 20** имели хорошие самостоятельные сайты и были исключены, ещё один кандидат остался `UNCERTAIN`. Расширение ниже прежнего TOP-20 не потребовалось: **4 `FOUND_BROKEN` + 6 `NOT_FOUND`** образуют ровно 10 кандидатов, прошедших quality gate.
