@@ -1,26 +1,26 @@
-# TOP-20 после independent-site recheck
+# TOP-20 после final availability recheck текущей десятки
 
-Срез: 2026-09-29. Это исправляющий второй проход по прежнему TOP-20. `clients.site` больше не считается доказательством слабого основного сайта.
+Срез: 2026-09-29. Для позиций прежнего TOP-10 выполнен отдельный final availability + commercial quality recheck. Позиции 11–20 ниже не проверялись повторно в этом проходе и сохранены как результат предыдущего independent-site recheck. `clients.site` не считается доказательством слабого основного сайта, а единичный failed request не считается доказательством поломки.
 
 Для каждого кандидата применены минимум два независимых подхода:
 
 1. точное название + город и/или адрес;
 2. точный телефон и/или бренд, публичная соцсеть и ссылки из карточек.
 
-Найденные самостоятельные домены открывались в live Chromium на `360 × 900` и `1440 × 900`; проверялись identity, загрузка, horizontal overflow, CTA, структура и актуальность. Детальный root cause и evidence ledger: [`independent_site_recheck.md`](./independent_site_recheck.md).
+Найденные самостоятельные домены открывались в live Chromium на `360 × 900` и `1440 × 900`; проверялись identity, загрузка, horizontal overflow, CTA, структура и актуальность. Итоговый ledger текущей десятки: [`final_top10_recheck.md`](./final_top10_recheck.md). Предыдущий второй проход: [`independent_site_recheck.md`](./independent_site_recheck.md).
 
-| Rank | ID | Company | Niche / city | Independent status | Primary website | Live audit / identity result | New score | Decision |
+| Rank | ID | Company | Niche / city | Final status / quality | Primary website | Live audit / identity result | New score | Decision |
 |---:|---|---|---|---|---|---|---:|---|
-| 1 | L014 | Атмосфера | Стоматология / Красноярск | FOUND_BROKEN | [atmosfera-dental.ru](https://atmosfera-dental.ru/) | Exact phone/address; Chrome connection closed at both widths; TLS failure; indexed copy says site may be outdated/under development | 9.7 | KEEP |
-| 2 | L061 | Сёма | Детский центр / Новороссийск | FOUND_BROKEN | [novoros.semaclub.ru](https://novoros.semaclub.ru/) | Exact branch/address; local domain redirects to semaclub.ru, currently an unrelated mortgage page | 9.6 | KEEP |
-| 3 | L079 | Елховка SPA | Загородный отдых / Елховка | NOT_FOUND | [clients.site](https://elhovka-spa.clients.site/) | Name/location plus phone search found only listing, maps, aggregators and social/contact pages | 9.5 | KEEP |
-| 4 | L051 | Mami Beauty Room | Косметология / Москва | NOT_FOUND | [clients.site](https://mami-beauty.clients.site/) | Name/address plus phone search found no owned domain | 9.4 | KEEP |
-| 5 | L076 | BURO Бизнес Консалтинг | B2B-услуги / Смоленск | NOT_FOUND | [clients.site](https://juridicheskie-uslugi-biznes-konsalting.clients.site/) | Name/address and phone/messenger searches found no credible owned domain | 9.3 | KEEP |
-| 6 | L049 | GreenDoor | Двери / Щёлково | FOUND_BROKEN | [greendoorrussia.ru](https://greendoorrussia.ru/) | Exact phone/address; HTTP/HTTPS and TLS live checks fail | 9.2 | KEEP |
-| 7 | L083 | Villa Volga | Гостиница / Конаково | NOT_FOUND | [clients.site](https://villa-volga-pervomajskaja-ulitsa.clients.site/) | Name/address plus phone search found listings and travel aggregators only | 9.1 | KEEP |
-| 8 | L084 | Усадьба Соловьи | Загородный отдых / Малое Козино | FOUND_BROKEN | [solovi-usadba.ru](https://solovi-usadba.ru/) | Exact phone/address; current site gives HTTP/2 protocol error, older official IDN times out | 9.0 | KEEP |
-| 9 | L055 | OMA Clinic | Косметология / Химки | NOT_FOUND | [clients.site](https://omaclinic.clients.site/) | Name/location and phone search found listing/directories/socials only | 8.9 | KEEP |
-| 10 | L091 | LeFitness | Фитнес / Казань | NOT_FOUND | [clients.site](https://lefitness.clients.site/) | Exact phone/address and social search found no owned independent domain | 8.8 | KEEP |
+| 1 | L061 | Сёма | Детский центр / Новороссийск | BROKEN_CONFIRMED / NONE | [novoros.semaclub.ru](https://novoros.semaclub.ru/) | Browser and HTTP client reproduce redirect to unrelated mortgage content; exact active branch confirmed | 9.8 | KEEP |
+| 2 | L049 | GreenDoor | Двери / Щёлково | BROKEN_CONFIRMED / NONE | [greendoorrussia.ru](https://greendoorrussia.ru/) | Browser plus independent HTTP/HTTPS/TLS checks fail; exact current business card confirms domain and contacts | 9.6 | KEEP |
+| 3 | L079 | Елховка SPA | Загородный отдых / Елховка | NO_INDEPENDENT_SITE / VERY_WEAK | [clients.site](https://elhovka-spa.clients.site/) | Listing is live, but lacks inventory, prices, dates and booking flow | 9.5 | KEEP |
+| 4 | L083 | Villa Volga | Гостиница / Конаково | NO_INDEPENDENT_SITE / VERY_WEAK | [clients.site](https://villa-volga-pervomajskaja-ulitsa.clients.site/) | Listing is live, but lacks room types, availability and direct booking | 9.3 | KEEP |
+| 5 | L076 | BURO Бизнес Консалтинг | B2B-услуги / Смоленск | NO_INDEPENDENT_SITE / WEAK | [clients.site](https://juridicheskie-uslugi-biznes-konsalting.clients.site/) | Active listing lacks team evidence, cases and segmented consultation path | 9.0 | KEEP |
+| 6 | L084 | Усадьба Соловьи | Загородный отдых / Малое Козино | INTERMITTENT / WEAK | [solovi-usadba.ru](https://solovi-usadba.ru/) | Live checks fail, but current indexed 2026 content prevents BROKEN_CONFIRMED; weak pricing/booking path remains | 8.8 | KEEP |
+| 7 | L051 | Mami Beauty Room | Косметология / Москва | NO_INDEPENDENT_SITE / WEAK | [clients.site](https://mami-beauty.clients.site/) | Prices and WhatsApp exist, but no specialist/safety trust architecture | 8.7 | KEEP |
+| 8 | L014 | Атмосфера | Стоматология / Красноярск | INTERMITTENT / ADEQUATE | [atmosfera-dental.ru](https://atmosfera-dental.ru/) | Indexed current services, prices, reviews, documents, news and two locations contradict BROKEN; only targeted issues proven | 4.5 | DROP |
+| 9 | L091 | LeFitness | Фитнес / Казань | NO_INDEPENDENT_SITE / ADEQUATE | [clients.site](https://lefitness.clients.site/) | Live responsive listing already supplies services, prices, reviews, contacts and online booking | 4.3 | DROP |
+| 10 | L055 | OMA Clinic | Косметология / Химки | LIVE / ADEQUATE | [omaclinic.host-ai.site](https://omaclinic.host-ai.site/) | Independent site discovered by exact phone; responsive services, documents, contacts and YCLIENTS booking | 4.0 | DROP |
 | 11 | L013 | Имплант Профи | Стоматология / Москва | UNCERTAIN | [clients.site](https://implant-profi.clients.site/) | implantprofi.ru is good, but phone/locations do not match this lead; identity unresolved | 4.0 | DROP |
 | 12 | L094 | МЗ Синергия | Металлообработка / Санкт-Петербург | FOUND_GOOD | [mz-sinergia.ru](https://mz-sinergia.ru/) | Exact phone/company; clear B2B offer, services, ERP/ISO, products and quote flow; minor 392 px mobile scrollWidth | 2.8 | DROP |
 | 13 | L022 | Becker | Мебель / Санкт-Петербург | FOUND_GOOD | [kuhni-becker-spb.ru](https://kuhni-becker-spb.ru/) | Brand/location match; responsive offer, calculator, forms and warranty | 2.6 | DROP |
@@ -34,4 +34,4 @@
 
 ## Вывод
 
-Прежний TOP-20 не был authoritative: **9 из 20** имели хорошие самостоятельные сайты и были исключены, ещё один кандидат остался `UNCERTAIN`. Расширение ниже прежнего TOP-20 не потребовалось: **4 `FOUND_BROKEN` + 6 `NOT_FOUND`** образуют ровно 10 кандидатов, прошедших quality gate.
+Final availability recheck исключил **3 из прежнего TOP-10**: Атмосфера, LeFitness и OMA Clinic. В qualified shortlist осталось **7** кандидатов. Поиск замен ниже текущей десятки намеренно не выполнялся. Позиции 11–20 остаются историческим результатом предыдущего прохода и не смешиваются с новой operational/commercial классификацией.
