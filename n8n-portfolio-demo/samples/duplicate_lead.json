@@ -1,0 +1,11 @@
+{
+  "name": "Anna Petrova",
+  "phone": "+79991234567",
+  "email": "ANNA@EXAMPLE.COM",
+  "company": "Northwind Dental",
+  "service": "WhatsApp automation",
+  "budget": 500,
+  "message": "Повторная заявка на автоматизацию обработки лидов и записи клиентов",
+  "source": "website",
+  "_expected": { "prerequisite": "run hot_lead.json first", "final_status": "DUPLICATE", "returns_existing_lead_id": true }
+}

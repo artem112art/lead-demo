@@ -1,0 +1,9 @@
+{
+  "name": "Mikhail Orlov",
+  "phone": "+7 (921) 555-01-10",
+  "company": "Orlov Studio",
+  "service": "CRM intake",
+  "message": "Хотим автоматизировать обработку лидов и передачу менеджеру",
+  "source": "referral",
+  "_expected": { "score": 50, "tier": "WARM", "final_status": "FOLLOW_UP_SCHEDULED" }
+}

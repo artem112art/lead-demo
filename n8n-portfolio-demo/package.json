@@ -1,0 +1,13 @@
+{
+  "name": "n8n-lead-automation-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/validate.mjs",
+    "mock": "node mock-api/server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,54 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:${N8N_VERSION:-2.40.7}
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:5678/
+      GENERIC_TIMEZONE: UTC
+      TZ: UTC
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-demo-only-change-me}
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      DEMO_MODE: ${DEMO_MODE:-true}
+      HOT_THRESHOLD: ${HOT_THRESHOLD:-70}
+      WARM_THRESHOLD: ${WARM_THRESHOLD:-40}
+      FOLLOWUP_DELAY_MINUTES: ${FOLLOWUP_DELAY_MINUTES:-1}
+      ENABLE_TELEGRAM: ${ENABLE_TELEGRAM:-false}
+      ENABLE_WHATSAPP: ${ENABLE_WHATSAPP:-false}
+      ENABLE_EMAIL: ${ENABLE_EMAIL:-false}
+      MOCK_API_BASE_URL: ${MOCK_API_BASE_URL:-http://mock-api:8080}
+      APPROVAL_ALLOWED_HOSTS: ${APPROVAL_ALLOWED_HOSTS:-localhost:5678,n8n:5678}
+      APPROVAL_INTERNAL_BASE_URL: ${APPROVAL_INTERNAL_BASE_URL:-http://n8n:5678}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/files/workflows:ro
+    depends_on:
+      mock-api:
+        condition: service_healthy
+
+  mock-api:
+    image: node:24-alpine
+    restart: unless-stopped
+    working_dir: /app
+    command: ["node", "mock-api/server.mjs"]
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      DATA_FILE: /data/state.json
+    volumes:
+      - ./:/app:ro
+      - mock_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+volumes:
+  n8n_data:
+  mock_data:

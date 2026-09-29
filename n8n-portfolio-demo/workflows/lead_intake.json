@@ -1,0 +1,603 @@
+{
+  "name": "Demo — Lead Intake, Qualification & HITL",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "demo-lead", "responseMode": "responseNode", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1001",
+      "name": "POST /webhook/demo-lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1840, 0],
+      "webhookId": "d7967202-fca0-4d0c-b70b-520f1da825b1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = { ...($json.body ?? $json) };\ndelete raw._expected;\nconst bool = (value, fallback = false) => value === undefined ? fallback : String(value).toLowerCase() === 'true';\nconst num = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;\nconst config = {\n  demo_mode: bool($env.DEMO_MODE, true),\n  hot_threshold: num($env.HOT_THRESHOLD, 70),\n  warm_threshold: num($env.WARM_THRESHOLD, 40),\n  followup_delay_minutes: num($env.FOLLOWUP_DELAY_MINUTES, 1),\n  enable_telegram: bool($env.ENABLE_TELEGRAM),\n  enable_whatsapp: bool($env.ENABLE_WHATSAPP),\n  enable_email: bool($env.ENABLE_EMAIL),\n  mock_api_base_url: $env.MOCK_API_BASE_URL || 'http://mock-api:8080'\n};\nconst errors = [];\nif (!String(raw.name ?? '').trim()) errors.push({ field: 'name', code: 'REQUIRED' });\nif (!String(raw.email ?? '').trim() && !String(raw.phone ?? '').trim()) errors.push({ field: 'email_or_phone', code: 'REQUIRED' });\nif (!String(raw.message ?? '').trim()) errors.push({ field: 'message', code: 'REQUIRED' });\nif (!String(raw.source ?? '').trim()) errors.push({ field: 'source', code: 'REQUIRED' });\nconst correlationId = `request_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;\nreturn [{ json: { raw, config, correlation_id: correlationId, valid: errors.length === 0, validation_errors: errors, audit_events: [\n  { step: 'RECEIVED', status: 'OK', message: 'Webhook payload received' },\n  { step: 'VALIDATED', status: errors.length ? 'ERROR' : 'OK', message: errors.length ? `Missing: ${errors.map(e => e.field).join(', ')}` : 'Required fields present' }\n] } }];"
+      },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1002",
+      "name": "Config & Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1620, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [{ "id": "21ac0e36-df0d-4f3e-9af4-7b918d3fd800", "leftValue": "={{ $json.valid }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1003",
+      "name": "Input Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1400, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const compact = value => String(value ?? '').trim().replace(/\\s+/g, ' ');\nconst input = $json.raw;\nconst digits = compact(input.phone).replace(/\\D/g, '');\nconst normalizedDigits = digits.length === 11 && digits.startsWith('8') ? `7${digits.slice(1)}` : digits;\nconst email = compact(input.email).toLowerCase();\nconst phone = normalizedDigits ? `+${normalizedDigits}` : '';\nconst allowedSources = new Set(['website', 'referral', 'social', 'ads', 'email', 'other']);\nconst rawSource = compact(input.source).toLowerCase();\nconst parsedBudget = Number(input.budget);\nconst budget = Number.isFinite(parsedBudget) && parsedBudget >= 0 ? parsedBudget : null;\nconst seed = `${email}|${phone}|${compact(input.company)}|${Date.now()}`;\nlet hash = 2166136261;\nfor (const char of seed) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);\nconst leadId = `lead_${Date.now().toString(36)}_${(hash >>> 0).toString(36)}`;\nconst lead = {\n  lead_id: leadId, correlation_id: leadId, created_at: new Date().toISOString(),\n  name: compact(input.name), company: compact(input.company), email, phone,\n  service: compact(input.service), budget, message: compact(input.message),\n  source: allowedSources.has(rawSource) ? rawSource : 'other',\n  simulate_downstream_failure: Boolean(input.simulate_downstream_failure),\n  status: 'RECEIVED', approved: null, last_action: 'NORMALIZED', error_count: 0\n};\nreturn [{ json: { ...lead, config: $json.config, audit_events: [\n  ...$json.audit_events,\n  { step: 'NORMALIZED', status: 'OK', message: 'Contact fields and enums normalized' }\n] } }];"
+      },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1004",
+      "name": "Normalize Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1180, -140]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: { lead_id: $json.correlation_id, correlation_id: $json.correlation_id, config: $json.config }, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1005",
+      "name": "Audit Validation Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-1180, 180],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify({ ok: false, status: 'VALIDATION_FAILED', correlation_id: $('Config & Validate').first().json.correlation_id, errors: $('Config & Validate').first().json.validation_errors }) }}", "options": { "responseCode": 422 } },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1006",
+      "name": "Respond 422",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [-940, 180]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1007",
+      "name": "Audit Intake",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-940, -140],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/crm/lookup' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1008",
+      "name": "CRM Duplicate Lookup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-700, -140],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [{ "id": "96fe4910-3b7f-4260-af42-a138da9de100", "leftValue": "={{ $json.duplicate }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1009",
+      "name": "Duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-460, -140]
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ...$json, status: 'DUPLICATE', last_action: 'DUPLICATE_CHECK', audit_events: [{ step: 'DUPLICATE_CHECK', status: 'DUPLICATE', message: `Existing lead: ${$json.existing_lead_id}` }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1010",
+      "name": "Mark Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-220, 60]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1011",
+      "name": "Audit Duplicate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [20, 60],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify({ ok: true, status: 'DUPLICATE', lead_id: $json.existing_lead_id, correlation_id: $json.correlation_id }) }}", "options": { "responseCode": 200 } },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1012",
+      "name": "Respond Duplicate",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [260, 60]
+    },
+    {
+      "parameters": {
+        "jsCode": "let score = 0;\nconst reasons = [];\nconst add = (points, reason) => { score += points; reasons.push({ points, reason }); };\nconst clearTask = $json.message.length >= 40 && /(автомат|лид|запис|crm|интеграц|workflow|обработ|sales|support|booking)/i.test($json.message);\nconst spam = /(^|\\s)(test|spam|asdf|qwerty|тест)(\\s|$)/i.test($json.message);\nif ($json.budget !== null && $json.budget > 0) add(25, 'budget_provided');\nif ($json.budget !== null && $json.budget >= 300) add(15, 'budget_at_least_300');\nif (clearTask) add(20, 'clear_business_task');\nif ($json.company) add(15, 'company_provided');\nif ($json.phone) add(10, 'phone_provided');\nif ($json.email) add(10, 'email_provided');\nif (['website', 'referral'].includes($json.source)) add(5, 'high_intent_source');\nif ($json.message.length < 20) add(-20, 'message_too_short');\nif (spam) add(-30, 'spam_indicator');\nif (!$json.phone && !$json.email) add(-20, 'no_contact');\nscore = Math.max(0, Math.min(100, score));\nconst tier = score >= $json.config.hot_threshold ? 'HOT' : score >= $json.config.warm_threshold ? 'WARM' : 'COLD';\nconst summary = `${$json.name}${$json.company ? ` from ${$json.company}` : ''} wants ${$json.service || 'an automation solution'}. Budget: ${$json.budget ?? 'not specified'}. Problem: ${$json.message}. Recommended action: ${tier === 'HOT' ? 'review and contact within 15 minutes' : tier === 'WARM' ? 'send a focused follow-up' : 'retain for nurture without immediate notification'}.`;\nreturn [{ json: { ...$json, lead_score: score, lead_tier: tier, score_reasons: reasons, summary, status: 'QUALIFIED', last_action: 'SCORED', audit_events: [\n  { step: 'DUPLICATE_CHECK', status: 'UNIQUE', message: 'No matching contact found' },\n  { step: 'SCORED', status: 'OK', message: `Score ${score}; tier ${tier}` }\n] } }];"
+      },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1013",
+      "name": "Score & Summarize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-220, -300]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/crm/upsert' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1014",
+      "name": "CRM Save Qualified",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [20, -300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1015",
+      "name": "Audit Qualification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, -300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [{ "id": "1fc91fc2-aabe-4727-a8ac-4cf0f7e8ed00", "leftValue": "={{ $json.lead_tier }}", "rightValue": "HOT", "operator": { "type": "string", "operation": "equals" } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1016",
+      "name": "HOT?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [500, -300]
+    },
+    {
+      "parameters": { "jsCode": "const resumeUrl = $execution.resumeUrl;\nconst approvalRequest = { lead_id: $json.lead_id, decision_options: ['APPROVE', 'REJECT'], resume_url: resumeUrl, summary: $json.summary, score: $json.lead_score };\nreturn [{ json: { ...$json, status: 'NEEDS_APPROVAL', last_action: 'APPROVAL_REQUESTED', approval_request: approvalRequest, audit_events: [{ step: 'APPROVAL_REQUESTED', status: 'PENDING', message: 'Human decision required for HOT lead' }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1017",
+      "name": "Prepare Approval",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [740, -520]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/notifications/approval' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, message: $json.approval_request }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1018",
+      "name": "Mock Approval Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [980, -520],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/crm/upsert' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1019",
+      "name": "CRM Needs Approval",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1220, -520],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1020",
+      "name": "Audit Approval Requested",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1460, -520],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify({ ok: true, lead_id: $json.lead_id, status: 'NEEDS_APPROVAL', tier: $json.lead_tier, score: $json.lead_score, summary: $json.summary, approval: $json.approval_request }) }}", "options": { "responseCode": 202 } },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1021",
+      "name": "Respond HOT 202",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1700, -520]
+    },
+    {
+      "parameters": { "resume": "webhook", "httpMethod": "POST", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1022",
+      "name": "Wait for Approval",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1940, -520],
+      "webhookId": "389b9d18-dcd9-4e94-b5c5-9a1d2c5e41a7"
+    },
+    {
+      "parameters": { "jsCode": "const context = $('CRM Needs Approval').first().json;\nconst incoming = $json.body ?? $json;\nconst decision = String(incoming.decision ?? '').trim().toUpperCase();\nif (!['APPROVE', 'REJECT'].includes(decision)) throw new Error(`[lead_id=${context.lead_id}] approval decision must be APPROVE or REJECT`);\nreturn [{ json: { ...context, approved: decision === 'APPROVE', approval_decision: decision, approval_actor: String(incoming.actor ?? 'demo-reviewer'), approval_at: new Date().toISOString() } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1023",
+      "name": "Read Approval Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2180, -520]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [{ "id": "dc8c15d2-21a0-4428-b9d0-acde85710800", "leftValue": "={{ $json.approved }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1024",
+      "name": "Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2420, -520]
+    },
+    {
+      "parameters": { "jsCode": "const handoff = { lead_id: $json.lead_id, priority: 'HIGH', contact: $json.phone || $json.email, summary: $json.summary, recommended_action: 'Contact within 15 minutes' };\nreturn [{ json: { ...$json, status: 'APPROVED', last_action: 'APPROVED', handoff, audit_events: [{ step: 'APPROVED', status: 'OK', message: `Approved by ${$json.approval_actor}` }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1025",
+      "name": "Build Sales Handoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2660, -680]
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ...$json, adapter_results: [...($json.adapter_results ?? []), { adapter: 'telegram_adapter', enabled: $json.config.enable_telegram, mode: $json.config.demo_mode ? 'MOCK_ONLY' : 'PRODUCTION_REQUIRES_CREDENTIAL' }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1026",
+      "name": "telegram_adapter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2900, -680]
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ...$json, adapter_results: [...($json.adapter_results ?? []), { adapter: 'whatsapp_adapter', enabled: $json.config.enable_whatsapp, mode: $json.config.demo_mode ? 'MOCK_ONLY' : 'PRODUCTION_REQUIRES_CREDENTIAL' }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1027",
+      "name": "whatsapp_adapter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3140, -680]
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ...$json, adapter_results: [...($json.adapter_results ?? []), { adapter: 'email_adapter', enabled: $json.config.enable_email, mode: $json.config.demo_mode ? 'MOCK_ONLY' : 'PRODUCTION_REQUIRES_CREDENTIAL' }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1028",
+      "name": "email_adapter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3380, -680]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/notifications/sales-handoff' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, message: { handoff: $json.handoff, adapters: $json.adapter_results } }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1029",
+      "name": "Mock Sales Handoff",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3620, -680],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ...$json, status: 'HANDOFF_SENT', last_action: 'HANDOFF_SENT', audit_events: [{ step: 'HANDOFF_SENT', status: 'OK', message: 'Mock sales handoff accepted' }, { step: 'CRM_WRITTEN', status: 'OK', message: 'Final state ready for persistence' }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1030",
+      "name": "Mark Handoff Sent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3860, -760]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/crm/upsert' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1031",
+      "name": "CRM Handoff Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4100, -760],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1032",
+      "name": "Audit Handoff",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4340, -760],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "jsCode": "const context = $('email_adapter').first().json;\nconst errorMessage = $json.error?.message ?? $json.message ?? 'Unknown adapter failure';\nreturn [{ json: { ...context, status: 'DEAD_LETTER', last_action: 'FAILED', error_count: Number(context.error_count ?? 0) + 1, error_payload: { lead_id: context.lead_id, step: 'HANDOFF_SENT', message: errorMessage, retry_attempts: 3 }, audit_events: [{ step: 'FAILED', status: 'ERROR', message: errorMessage }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1033",
+      "name": "Handle Adapter Failure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3860, -560]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/dead-letter' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, error: $json.error_payload }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1034",
+      "name": "Dead Letter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4100, -560],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1035",
+      "name": "Audit Dead Letter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4340, -560],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ...$json, status: 'REJECTED', approved: false, last_action: 'REJECTED', audit_events: [{ step: 'APPROVED', status: 'REJECTED', message: `Rejected by ${$json.approval_actor}` }, { step: 'CRM_WRITTEN', status: 'OK', message: 'Rejection persisted' }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1036",
+      "name": "Mark Rejected",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2660, -360]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/crm/upsert' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1037",
+      "name": "CRM Rejected",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2900, -360],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1038",
+      "name": "Audit Rejected",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3140, -360],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [{ "id": "686f2831-0041-45e1-8a08-cb2a0e524800", "leftValue": "={{ $json.lead_tier }}", "rightValue": "WARM", "operator": { "type": "string", "operation": "equals" } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1039",
+      "name": "WARM?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [740, -100]
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ...$json, status: 'FOLLOW_UP_SCHEDULED', last_action: 'FOLLOW_UP_SCHEDULED', audit_events: [{ step: 'CRM_WRITTEN', status: 'OK', message: 'Warm lead stored' }, { step: 'FOLLOW_UP_SCHEDULED', status: 'PENDING', message: `Delay: ${$json.config.followup_delay_minutes} minute(s)` }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1040",
+      "name": "Schedule Follow-up",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [980, -180]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/crm/upsert' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1041",
+      "name": "CRM Warm Scheduled",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1220, -180],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1042",
+      "name": "Audit Follow-up Scheduled",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1460, -180],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify({ ok: true, lead_id: $json.lead_id, status: 'FOLLOW_UP_SCHEDULED', tier: $json.lead_tier, score: $json.lead_score, followup_delay_minutes: $json.config.followup_delay_minutes }) }}", "options": { "responseCode": 202 } },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1043",
+      "name": "Respond WARM 202",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1700, -180]
+    },
+    {
+      "parameters": { "resume": "timeInterval", "amount": "={{ $('CRM Warm Scheduled').first().json.config.followup_delay_minutes }}", "unit": "minutes" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1044",
+      "name": "Wait Follow-up Delay",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1940, -180],
+      "webhookId": "a2617978-f127-4464-8e66-cf2dbe4d60a8"
+    },
+    {
+      "parameters": { "jsCode": "const context = $('CRM Warm Scheduled').first().json;\nreturn [{ json: { ...context, status: 'FOLLOW_UP_READY', last_action: 'FOLLOW_UP_READY', followup: { lead_id: context.lead_id, contact: context.phone || context.email, summary: context.summary } } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1045",
+      "name": "Build Follow-up",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2180, -180]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/notifications/follow-up' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, message: $json.followup }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1046",
+      "name": "Mock Follow-up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2420, -180],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ...$json, status: 'FOLLOW_UP_SENT', last_action: 'FOLLOW_UP_SENT', audit_events: [{ step: 'HANDOFF_SENT', status: 'OK', message: 'Mock follow-up accepted' }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1047",
+      "name": "Mark Follow-up Sent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2660, -180]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/crm/upsert' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1048",
+      "name": "CRM Follow-up Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2900, -180],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1049",
+      "name": "Audit Follow-up Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3140, -180],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ...$json, status: 'STORED', last_action: 'CRM_WRITTEN', audit_events: [{ step: 'CRM_WRITTEN', status: 'OK', message: 'Cold lead stored without immediate notification' }] } }];" },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1050",
+      "name": "Store COLD",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [980, 60]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/crm/upsert' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1051",
+      "name": "CRM COLD",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1220, 60],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1052",
+      "name": "Audit COLD",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1460, 60],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify({ ok: true, lead_id: $json.lead_id, status: 'STORED', tier: $json.lead_tier, score: $json.lead_score }) }}", "options": { "responseCode": 201 } },
+      "id": "0b4ad4d8-b7cf-47db-a117-63b2788a1053",
+      "name": "Respond COLD 201",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1700, 60]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "POST /webhook/demo-lead": { "main": [[{ "node": "Config & Validate", "type": "main", "index": 0 }]] },
+    "Config & Validate": { "main": [[{ "node": "Input Valid?", "type": "main", "index": 0 }]] },
+    "Input Valid?": { "main": [[{ "node": "Normalize Lead", "type": "main", "index": 0 }], [{ "node": "Audit Validation Error", "type": "main", "index": 0 }]] },
+    "Audit Validation Error": { "main": [[{ "node": "Respond 422", "type": "main", "index": 0 }]] },
+    "Normalize Lead": { "main": [[{ "node": "Audit Intake", "type": "main", "index": 0 }]] },
+    "Audit Intake": { "main": [[{ "node": "CRM Duplicate Lookup", "type": "main", "index": 0 }]] },
+    "CRM Duplicate Lookup": { "main": [[{ "node": "Duplicate?", "type": "main", "index": 0 }]] },
+    "Duplicate?": { "main": [[{ "node": "Mark Duplicate", "type": "main", "index": 0 }], [{ "node": "Score & Summarize", "type": "main", "index": 0 }]] },
+    "Mark Duplicate": { "main": [[{ "node": "Audit Duplicate", "type": "main", "index": 0 }]] },
+    "Audit Duplicate": { "main": [[{ "node": "Respond Duplicate", "type": "main", "index": 0 }]] },
+    "Score & Summarize": { "main": [[{ "node": "CRM Save Qualified", "type": "main", "index": 0 }]] },
+    "CRM Save Qualified": { "main": [[{ "node": "Audit Qualification", "type": "main", "index": 0 }]] },
+    "Audit Qualification": { "main": [[{ "node": "HOT?", "type": "main", "index": 0 }]] },
+    "HOT?": { "main": [[{ "node": "Prepare Approval", "type": "main", "index": 0 }], [{ "node": "WARM?", "type": "main", "index": 0 }]] },
+    "Prepare Approval": { "main": [[{ "node": "Mock Approval Notification", "type": "main", "index": 0 }]] },
+    "Mock Approval Notification": { "main": [[{ "node": "CRM Needs Approval", "type": "main", "index": 0 }]] },
+    "CRM Needs Approval": { "main": [[{ "node": "Audit Approval Requested", "type": "main", "index": 0 }]] },
+    "Audit Approval Requested": { "main": [[{ "node": "Respond HOT 202", "type": "main", "index": 0 }]] },
+    "Respond HOT 202": { "main": [[{ "node": "Wait for Approval", "type": "main", "index": 0 }]] },
+    "Wait for Approval": { "main": [[{ "node": "Read Approval Decision", "type": "main", "index": 0 }]] },
+    "Read Approval Decision": { "main": [[{ "node": "Approved?", "type": "main", "index": 0 }]] },
+    "Approved?": { "main": [[{ "node": "Build Sales Handoff", "type": "main", "index": 0 }], [{ "node": "Mark Rejected", "type": "main", "index": 0 }]] },
+    "Build Sales Handoff": { "main": [[{ "node": "telegram_adapter", "type": "main", "index": 0 }]] },
+    "telegram_adapter": { "main": [[{ "node": "whatsapp_adapter", "type": "main", "index": 0 }]] },
+    "whatsapp_adapter": { "main": [[{ "node": "email_adapter", "type": "main", "index": 0 }]] },
+    "email_adapter": { "main": [[{ "node": "Mock Sales Handoff", "type": "main", "index": 0 }]] },
+    "Mock Sales Handoff": { "main": [[{ "node": "Mark Handoff Sent", "type": "main", "index": 0 }], [{ "node": "Handle Adapter Failure", "type": "main", "index": 0 }]] },
+    "Mark Handoff Sent": { "main": [[{ "node": "CRM Handoff Sent", "type": "main", "index": 0 }]] },
+    "CRM Handoff Sent": { "main": [[{ "node": "Audit Handoff", "type": "main", "index": 0 }]] },
+    "Handle Adapter Failure": { "main": [[{ "node": "Dead Letter", "type": "main", "index": 0 }]] },
+    "Dead Letter": { "main": [[{ "node": "Audit Dead Letter", "type": "main", "index": 0 }]] },
+    "Mark Rejected": { "main": [[{ "node": "CRM Rejected", "type": "main", "index": 0 }]] },
+    "CRM Rejected": { "main": [[{ "node": "Audit Rejected", "type": "main", "index": 0 }]] },
+    "WARM?": { "main": [[{ "node": "Schedule Follow-up", "type": "main", "index": 0 }], [{ "node": "Store COLD", "type": "main", "index": 0 }]] },
+    "Schedule Follow-up": { "main": [[{ "node": "CRM Warm Scheduled", "type": "main", "index": 0 }]] },
+    "CRM Warm Scheduled": { "main": [[{ "node": "Audit Follow-up Scheduled", "type": "main", "index": 0 }]] },
+    "Audit Follow-up Scheduled": { "main": [[{ "node": "Respond WARM 202", "type": "main", "index": 0 }]] },
+    "Respond WARM 202": { "main": [[{ "node": "Wait Follow-up Delay", "type": "main", "index": 0 }]] },
+    "Wait Follow-up Delay": { "main": [[{ "node": "Build Follow-up", "type": "main", "index": 0 }]] },
+    "Build Follow-up": { "main": [[{ "node": "Mock Follow-up", "type": "main", "index": 0 }]] },
+    "Mock Follow-up": { "main": [[{ "node": "Mark Follow-up Sent", "type": "main", "index": 0 }]] },
+    "Mark Follow-up Sent": { "main": [[{ "node": "CRM Follow-up Sent", "type": "main", "index": 0 }]] },
+    "CRM Follow-up Sent": { "main": [[{ "node": "Audit Follow-up Sent", "type": "main", "index": 0 }]] },
+    "Store COLD": { "main": [[{ "node": "CRM COLD", "type": "main", "index": 0 }]] },
+    "CRM COLD": { "main": [[{ "node": "Audit COLD", "type": "main", "index": 0 }]] },
+    "Audit COLD": { "main": [[{ "node": "Respond COLD 201", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "timezone": "UTC"
+  },
+  "versionId": "d32ea558-102e-4f22-b929-cf76e59b10d2",
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": []
+}

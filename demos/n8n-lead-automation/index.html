@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Case study: production-minded n8n lead qualification automation with deterministic scoring, human approval, retries, audit, and local mock integrations.">
+  <meta name="robots" content="index,follow">
+  <title>n8n Lead Automation — Engineering Case Study</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header shell">
+    <a class="brand" href="../../" aria-label="Lead Demo Lab home">
+      <span class="brand-mark" aria-hidden="true">N8</span>
+      <span>Automation Systems</span>
+    </a>
+    <nav aria-label="Case study navigation">
+      <a href="#architecture">Architecture</a>
+      <a href="#reliability">Reliability</a>
+      <a href="#tests">Tests</a>
+    </nav>
+    <a class="header-link" href="https://github.com/artem112art/lead-demo/tree/main/n8n-portfolio-demo" target="_blank" rel="noopener noreferrer">View source <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main id="main">
+    <section class="hero shell" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Portfolio case study · executable demo</p>
+        <h1 id="hero-title">Lead qualification built as a system, not a chain of nodes.</h1>
+        <p class="hero-lead">An n8n reference implementation for validated intake, explainable scoring, human approval, CRM-neutral persistence, retries, audit, and safe channel handoff — with zero paid API dependencies.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="https://github.com/artem112art/lead-demo/blob/main/n8n-portfolio-demo/workflows/lead_intake.json" target="_blank" rel="noopener noreferrer">Open workflow JSON <span aria-hidden="true">↗</span></a>
+          <a class="button secondary" href="../../n8n-portfolio-demo/README.md">Read implementation guide</a>
+        </div>
+        <dl class="hero-stats">
+          <div><dt>3</dt><dd>importable workflows</dd></div>
+          <div><dt>6</dt><dd>test scenarios</dd></div>
+          <div><dt>0</dt><dd>required credentials</dd></div>
+        </dl>
+      </div>
+
+      <div class="system-console" aria-label="Workflow execution summary">
+        <div class="console-topbar">
+          <span>lead_intake / execution</span>
+          <span class="live-pill">DEMO MODE</span>
+        </div>
+        <div class="execution-id"><span>correlation</span><code>lead_mg5qk2_1x9a2b</code></div>
+        <ol class="execution-steps">
+          <li class="done"><span>01</span><div><strong>VALIDATED</strong><small>schema contract passed</small></div><b>12ms</b></li>
+          <li class="done"><span>02</span><div><strong>NORMALIZED</strong><small>contact + source + budget</small></div><b>4ms</b></li>
+          <li class="done"><span>03</span><div><strong>SCORED</strong><small>100 / HOT</small></div><b>8ms</b></li>
+          <li class="waiting"><span>04</span><div><strong>NEEDS_APPROVAL</strong><small>execution safely paused</small></div><b>WAIT</b></li>
+        </ol>
+        <div class="console-footer"><span>CRM persisted before side effects</span><span>audit: 6 events</span></div>
+      </div>
+    </section>
+
+    <section class="problem section shell" aria-labelledby="problem-title">
+      <div class="section-heading">
+        <p class="eyebrow">The problem</p>
+        <h2 id="problem-title">Inbound automation fails at the boundaries.</h2>
+      </div>
+      <div class="problem-grid">
+        <p class="problem-statement">A webhook-to-CRM shortcut looks efficient until malformed payloads, duplicates, noisy alerts, approval ambiguity, or a failing downstream API appears. The workflow must preserve a lead even when the happy path stops.</p>
+        <ul class="risk-list">
+          <li><span>01</span>Untrusted inputs reach integrations</li>
+          <li><span>02</span>Priority cannot be explained</li>
+          <li><span>03</span>Side effects happen before durable state</li>
+          <li><span>04</span>Failures disappear inside execution logs</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="architecture section" id="architecture" aria-labelledby="architecture-title">
+      <div class="shell">
+        <div class="section-heading architecture-heading">
+          <div><p class="eyebrow">Architecture</p><h2 id="architecture-title">One contract. Three controlled paths.</h2></div>
+          <a class="text-link" href="../../n8n-portfolio-demo/ARCHITECTURE.md">Architecture notes <span aria-hidden="true">→</span></a>
+        </div>
+
+        <div class="pipeline" role="img" aria-label="Webhook flows through validation, normalization, duplicate check, scoring, and tier routing">
+          <div class="pipeline-node entry"><small>TRIGGER</small><strong>Webhook</strong><code>POST /demo-lead</code></div>
+          <span class="connector" aria-hidden="true">→</span>
+          <div class="pipeline-node"><small>CONTRACT</small><strong>Validate</strong><code>422 on invalid</code></div>
+          <span class="connector" aria-hidden="true">→</span>
+          <div class="pipeline-node"><small>IDENTITY</small><strong>Normalize</strong><code>lead_id + UTC</code></div>
+          <span class="connector" aria-hidden="true">→</span>
+          <div class="pipeline-node"><small>STATE</small><strong>Deduplicate</strong><code>3 match rules</code></div>
+          <span class="connector" aria-hidden="true">→</span>
+          <div class="pipeline-node score"><small>DECISION</small><strong>Score</strong><code>0—100</code></div>
+        </div>
+
+        <div class="tier-grid">
+          <article class="tier hot">
+            <div class="tier-top"><span>HOT</span><strong>≥ 70</strong></div>
+            <h3>Human approval gate</h3>
+            <p>Persist, request review, pause the exact execution, then approve or reject through a separate validated webhook.</p>
+            <code>NEEDS_APPROVAL → HANDOFF_SENT</code>
+          </article>
+          <article class="tier warm">
+            <div class="tier-top"><span>WARM</span><strong>40—69</strong></div>
+            <h3>Scheduled follow-up</h3>
+            <p>Write the qualified lead first, acknowledge the intake, then resume after a configurable delay.</p>
+            <code>FOLLOW_UP_SCHEDULED</code>
+          </article>
+          <article class="tier cold">
+            <div class="tier-top"><span>COLD</span><strong>&lt; 40</strong></div>
+            <h3>Store without noise</h3>
+            <p>Keep the record and audit trail without generating an immediate sales notification.</p>
+            <code>STORED</code>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell scoring" aria-labelledby="scoring-title">
+      <div class="section-heading">
+        <p class="eyebrow">Deterministic intelligence</p>
+        <h2 id="scoring-title">AI-style output without an AI dependency.</h2>
+        <p>The Code node produces a readable summary, recommendation, and evidence list. Every point can be traced to a rule; a local LLM can be added later without becoming a critical dependency.</p>
+      </div>
+      <div class="score-card">
+        <div class="score-number"><strong>100</strong><span>/ 100</span><small>HOT</small></div>
+        <div class="score-factors">
+          <div><span>Budget provided</span><b>+25</b></div>
+          <div><span>Budget ≥ 300</span><b>+15</b></div>
+          <div><span>Clear business task</span><b>+20</b></div>
+          <div><span>Company + contacts</span><b>+35</b></div>
+          <div><span>High-intent source</span><b>+5</b></div>
+        </div>
+        <blockquote>“Anna Petrova from Northwind Dental wants WhatsApp automation. Budget: 500. Recommended action: review and contact within 15 minutes.”</blockquote>
+      </div>
+    </section>
+
+    <section class="reliability section" id="reliability" aria-labelledby="reliability-title">
+      <div class="shell">
+        <div class="section-heading light-heading">
+          <p class="eyebrow">Failure handling</p>
+          <h2 id="reliability-title">The failure path is part of the product.</h2>
+        </div>
+        <div class="reliability-grid">
+          <article><span class="icon">↻</span><h3>Bounded retries</h3><p>Integration nodes retry three times with a fixed delay. Permanent failures stop retrying and move to a named terminal state.</p></article>
+          <article><span class="icon">◇</span><h3>Dead-letter record</h3><p>Correlation ID, failed step, error message, retry count, and the persisted lead remain available for diagnosis and replay.</p></article>
+          <article><span class="icon">≡</span><h3>Append-only audit</h3><p>RECEIVED through FAILED events use one portable schema: timestamp, lead ID, step, status, and message.</p></article>
+          <article><span class="icon">!</span><h3>Error Trigger</h3><p>Unexpected automatic-execution failures enter a separate workflow with execution and last-node context.</p></article>
+        </div>
+        <div class="failure-flow" aria-label="Failure state sequence">
+          <span>DOWNSTREAM 503</span><i aria-hidden="true"></i><span>RETRY × 3</span><i aria-hidden="true"></i><span>DEAD_LETTER</span><i aria-hidden="true"></i><span>AUDIT + REPLAY</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell evidence" aria-labelledby="evidence-title">
+      <div class="section-heading">
+        <p class="eyebrow">Implementation evidence</p>
+        <h2 id="evidence-title">Designed to be opened, imported, and inspected.</h2>
+      </div>
+      <div class="evidence-grid">
+        <figure class="artifact-preview">
+          <div class="preview-bar"><span>n8n canvas</span><span>workflow / lead_intake</span></div>
+          <div class="canvas-preview" aria-label="Abstract workflow canvas preview">
+            <span class="wire w1"></span><span class="wire w2"></span><span class="wire w3"></span><span class="wire w4"></span>
+            <b class="node n1">Webhook</b><b class="node n2">Validate</b><b class="node n3">Score</b><b class="node n4 hot-node">Approval</b><b class="node n5">CRM</b><b class="node n6">Handoff</b>
+          </div>
+          <figcaption>Canvas representation. Import the workflow JSON to inspect executable node configuration.</figcaption>
+        </figure>
+        <div class="artifact-links">
+          <a href="https://github.com/artem112art/lead-demo/blob/main/n8n-portfolio-demo/workflows/lead_intake.json" target="_blank" rel="noopener noreferrer"><span>01</span><div><strong>Lead intake workflow</strong><small>validation · scoring · HITL · routing</small></div><b>JSON ↗</b></a>
+          <a href="https://github.com/artem112art/lead-demo/blob/main/n8n-portfolio-demo/workflows/approval_handler.json" target="_blank" rel="noopener noreferrer"><span>02</span><div><strong>Approval handler</strong><small>allowlist · approve · reject · resume</small></div><b>JSON ↗</b></a>
+          <a href="https://github.com/artem112art/lead-demo/blob/main/n8n-portfolio-demo/workflows/error_handler.json" target="_blank" rel="noopener noreferrer"><span>03</span><div><strong>Error handler</strong><small>error trigger · dead letter · audit</small></div><b>JSON ↗</b></a>
+          <a href="../../n8n-portfolio-demo/README.md"><span>04</span><div><strong>Runbook and case study</strong><small>local setup · API calls · upgrade path</small></div><b>README →</b></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tests" id="tests" aria-labelledby="tests-title">
+      <div class="shell">
+        <div class="section-heading tests-heading">
+          <div><p class="eyebrow">Test matrix</p><h2 id="tests-title">Six scenarios cover decisions and failure.</h2></div>
+          <a class="text-link" href="../../n8n-portfolio-demo/TEST_CASES.md">Detailed test plan <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Case</th><th>Score</th><th>Tier</th><th>Expected terminal state</th><th>Coverage</th></tr></thead>
+            <tbody>
+              <tr><td><b>A</b> Complete high-intent lead</td><td>100</td><td><span class="tag hot-tag">HOT</span></td><td>HANDOFF_SENT</td><td>approval + adapters</td></tr>
+              <tr><td><b>B</b> Qualified without budget</td><td>50</td><td><span class="tag warm-tag">WARM</span></td><td>FOLLOW_UP_SCHEDULED</td><td>wait + follow-up</td></tr>
+              <tr><td><b>C</b> Low-context request</td><td>0</td><td><span class="tag cold-tag">COLD</span></td><td>STORED</td><td>quiet persistence</td></tr>
+              <tr><td><b>D</b> Missing contact + message</td><td>—</td><td>—</td><td>VALIDATION_FAILED</td><td>422 + audit</td></tr>
+              <tr><td><b>E</b> Repeated email / phone</td><td>—</td><td>—</td><td>DUPLICATE</td><td>existing lead ID</td></tr>
+              <tr><td><b>F</b> Permanent handoff failure</td><td>100</td><td><span class="tag hot-tag">HOT</span></td><td>DEAD_LETTER</td><td>retry × 3 + recovery</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="verification-line"><span>Repository checks</span><code>npm test</code><strong>workflow shape · fixtures · mock API · links · secret scan</strong></div>
+      </div>
+    </section>
+
+    <section class="section shell adapters" aria-labelledby="adapters-title">
+      <div class="section-heading">
+        <p class="eyebrow">Production adapters</p>
+        <h2 id="adapters-title">Mocks stop where credentials would begin.</h2>
+        <p>The orchestration contract remains stable. Each local boundary can be replaced independently without rewriting qualification or approval logic.</p>
+      </div>
+      <div class="adapter-grid">
+        <article><small>PERSISTENCE</small><h3>Mock CRM</h3><p>File-backed lookup and upsert</p><span>→ HubSpot · Airtable · Sheets</span></article>
+        <article><small>MESSAGING</small><h3>Channel adapters</h3><p>Telegram, WhatsApp, email blocks</p><span>→ credentialed production nodes</span></article>
+        <article><small>OBSERVABILITY</small><h3>Audit API</h3><p>Portable event contract</p><span>→ database · stream · SIEM</span></article>
+        <article><small>RECOVERY</small><h3>Dead letter</h3><p>Replayable failure payload</p><span>→ queue · incident workflow</span></article>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="shell cta-inner">
+        <div><p class="eyebrow">Source package</p><h2>Inspect the decisions, not a screenshot.</h2><p>Workflow exports, local infrastructure, fixtures, documentation, and verification scripts are available in the repository.</p></div>
+        <div class="cta-actions">
+          <a class="button primary" href="https://github.com/artem112art/lead-demo/tree/main/n8n-portfolio-demo" target="_blank" rel="noopener noreferrer">Browse repository <span aria-hidden="true">↗</span></a>
+          <a class="button secondary dark-button" href="../../n8n-portfolio-demo/DEPLOYMENT.md">Deployment guide</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer shell">
+    <p>n8n Lead Qualification & Human-in-the-Loop Automation</p>
+    <p>Portfolio case study · synthetic data · no live messaging</p>
+  </footer>
+</body>
+</html>

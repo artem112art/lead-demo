@@ -1,0 +1,99 @@
+{
+  "name": "Demo — Approval Handler",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "demo-lead-approval", "responseMode": "responseNode", "options": {} },
+      "id": "3f3cd7a6-22ce-43d4-9aa4-4e558efa2001",
+      "name": "POST /webhook/demo-lead-approval",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-700, 0],
+      "webhookId": "f4d2c81d-a264-419d-b827-aa21911f3066"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json.body ?? $json;\nconst decision = String(input.decision ?? '').trim().toUpperCase();\nconst leadId = String(input.lead_id ?? '').trim();\nconst errors = [];\nif (!leadId) errors.push({ field: 'lead_id', code: 'REQUIRED' });\nif (!['APPROVE', 'REJECT'].includes(decision)) errors.push({ field: 'decision', code: 'ENUM', allowed: ['APPROVE', 'REJECT'] });\nlet safeResumeUrl = '';\ntry {\n  const candidate = new URL(String(input.resume_url ?? ''));\n  const allowed = String($env.APPROVAL_ALLOWED_HOSTS || 'localhost:5678,n8n:5678').split(',').map(v => v.trim()).filter(Boolean);\n  if (!allowed.includes(candidate.host)) throw new Error('host not allowlisted');\n  if (!candidate.pathname.startsWith('/webhook-waiting/')) throw new Error('unexpected path');\n  const internalBase = String($env.APPROVAL_INTERNAL_BASE_URL || 'http://n8n:5678').replace(/\\/$/, '');\n  safeResumeUrl = `${internalBase}${candidate.pathname}${candidate.search}`;\n} catch (error) { errors.push({ field: 'resume_url', code: 'INVALID_OR_NOT_ALLOWLISTED' }); }\nreturn [{ json: { valid: errors.length === 0, errors, lead_id: leadId, decision, actor: String(input.actor ?? 'demo-reviewer'), safe_resume_url: safeResumeUrl, mock_api_base_url: $env.MOCK_API_BASE_URL || 'http://mock-api:8080' } }];"
+      },
+      "id": "3f3cd7a6-22ce-43d4-9aa4-4e558efa2002",
+      "name": "Validate Approval",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-460, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [{ "id": "72bac541-3c02-4b7f-b680-7dcaa4d1f900", "leftValue": "={{ $json.valid }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3f3cd7a6-22ce-43d4-9aa4-4e558efa2003",
+      "name": "Approval Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-220, 0]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify({ ok: false, status: 'APPROVAL_VALIDATION_FAILED', errors: $json.errors }) }}", "options": { "responseCode": 422 } },
+      "id": "3f3cd7a6-22ce-43d4-9aa4-4e558efa2004",
+      "name": "Respond Approval 422",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [20, 140]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.safe_resume_url }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ decision: $json.decision, actor: $json.actor }) }}", "options": {} },
+      "id": "3f3cd7a6-22ce-43d4-9aa4-4e558efa2005",
+      "name": "Resume Waiting Execution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [20, -100],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $('Validate Approval').first().json.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: { lead_id: $('Validate Approval').first().json.lead_id }, events: [{ step: $('Validate Approval').first().json.decision === 'APPROVE' ? 'APPROVED' : 'REJECTED', status: 'OK', message: `Decision submitted by ${$('Validate Approval').first().json.actor}` }] }) }}", "options": {} },
+      "id": "3f3cd7a6-22ce-43d4-9aa4-4e558efa2006",
+      "name": "Audit Approval Decision",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, -160],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify({ ok: true, lead_id: $('Validate Approval').first().json.lead_id, decision: $('Validate Approval').first().json.decision, status: 'RESUME_ACCEPTED' }) }}", "options": { "responseCode": 200 } },
+      "id": "3f3cd7a6-22ce-43d4-9aa4-4e558efa2007",
+      "name": "Respond Approval 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [500, -160]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ JSON.stringify({ ok: false, lead_id: $('Validate Approval').first().json.lead_id, status: 'RESUME_FAILED', error: $json.error?.message ?? $json.message ?? 'Waiting execution could not be resumed' }) }}", "options": { "responseCode": 502 } },
+      "id": "3f3cd7a6-22ce-43d4-9aa4-4e558efa2008",
+      "name": "Respond Approval 502",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [260, 20]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "POST /webhook/demo-lead-approval": { "main": [[{ "node": "Validate Approval", "type": "main", "index": 0 }]] },
+    "Validate Approval": { "main": [[{ "node": "Approval Valid?", "type": "main", "index": 0 }]] },
+    "Approval Valid?": { "main": [[{ "node": "Resume Waiting Execution", "type": "main", "index": 0 }], [{ "node": "Respond Approval 422", "type": "main", "index": 0 }]] },
+    "Resume Waiting Execution": { "main": [[{ "node": "Audit Approval Decision", "type": "main", "index": 0 }], [{ "node": "Respond Approval 502", "type": "main", "index": 0 }]] },
+    "Audit Approval Decision": { "main": [[{ "node": "Respond Approval 200", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveDataErrorExecution": "all", "saveDataSuccessExecution": "all", "saveManualExecutions": true, "timezone": "UTC" },
+  "versionId": "9175f5a1-46e0-466f-bab4-f94b0f3fc282",
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": []
+}

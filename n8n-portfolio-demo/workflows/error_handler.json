@@ -1,0 +1,56 @@
+{
+  "name": "Demo — ERROR_HANDLER",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "cd774c46-acb5-4cf1-b9ef-9dc667d53001",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [-460, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const execution = $json.execution ?? {};\nconst trigger = $json.trigger ?? {};\nconst workflow = $json.workflow ?? {};\nconst message = execution.error?.message ?? trigger.error?.message ?? trigger.error?.cause?.message ?? 'Unknown workflow failure';\nconst match = String(message).match(/\\[lead_id=([^\\]]+)\\]/);\nconst leadId = match?.[1] ?? `execution_${execution.id ?? Date.now()}`;\nconst context = { lead_id: leadId, correlation_id: leadId, status: 'DEAD_LETTER', approved: null, last_action: 'FAILED', error_count: 1, config: { mock_api_base_url: $env.MOCK_API_BASE_URL || 'http://mock-api:8080' } };\nconst errorPayload = { timestamp: new Date().toISOString(), lead_id: leadId, workflow_id: workflow.id ?? null, workflow_name: workflow.name ?? null, execution_id: execution.id ?? null, execution_url: execution.url ?? null, last_node: execution.lastNodeExecuted ?? trigger.error?.node?.name ?? null, message, stack: execution.error?.stack ?? trigger.error?.cause?.stack ?? null, retry_of: execution.retryOf ?? null };\nreturn [{ json: { ...context, error_payload: errorPayload, audit_events: [{ step: 'FAILED', status: 'ERROR', message }] } }];"
+      },
+      "id": "cd774c46-acb5-4cf1-b9ef-9dc667d53002",
+      "name": "Build Error Envelope",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-220, 0]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/dead-letter' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, error: $json.error_payload }) }}", "options": {} },
+      "id": "cd774c46-acb5-4cf1-b9ef-9dc667d53003",
+      "name": "Persist Dead Letter",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [20, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $json.config.mock_api_base_url + '/audit' }}", "sendBody": true, "specifyBody": "json", "jsonBody": "={{ JSON.stringify({ context: $json, events: $json.audit_events }) }}", "options": {} },
+      "id": "cd774c46-acb5-4cf1-b9ef-9dc667d53004",
+      "name": "Audit Failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [260, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": { "main": [[{ "node": "Build Error Envelope", "type": "main", "index": 0 }]] },
+    "Build Error Envelope": { "main": [[{ "node": "Persist Dead Letter", "type": "main", "index": 0 }]] },
+    "Persist Dead Letter": { "main": [[{ "node": "Audit Failure", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "saveDataErrorExecution": "all", "saveDataSuccessExecution": "all", "saveManualExecutions": true, "timezone": "UTC" },
+  "versionId": "7ccfeff4-1b65-41be-9ed2-b71e490895e4",
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": []
+}

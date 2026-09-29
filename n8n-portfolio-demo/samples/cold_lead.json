@@ -1,0 +1,8 @@
+{
+  "name": "Sam Lee",
+  "email": "sam@example.com",
+  "service": "Consulting",
+  "message": "Need info",
+  "source": "other",
+  "_expected": { "score": 0, "tier": "COLD", "final_status": "STORED" }
+}

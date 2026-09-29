@@ -1,0 +1,12 @@
+{
+  "name": "Failure Simulation",
+  "phone": "+79990001122",
+  "email": "failure@example.com",
+  "company": "Contoso Ops",
+  "service": "Lead routing automation",
+  "budget": 750,
+  "message": "Нужно автоматизировать обработку лидов, квалификацию и CRM handoff",
+  "source": "website",
+  "simulate_downstream_failure": true,
+  "_expected": { "score": 100, "tier": "HOT", "after_approval": "DEAD_LETTER", "retry_attempts": 3 }
+}
