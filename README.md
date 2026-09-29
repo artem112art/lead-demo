@@ -1,6 +1,20 @@
 # Lead Demo Lab
 
-Один статический Cloudflare Pages проект для независимых клиентских демо-сайтов.
+Один статический проект для независимых клиентских демо-сайтов. Он публикуется параллельно на Cloudflare Pages и GitHub Pages без build-step.
+
+## Публикация
+
+- Cloudflare Pages: `https://lead-demo.pages.dev/`
+- GitHub Pages: `https://artem112art.github.io/lead-demo/`
+- Источник для обоих хостов: ветка `main`, корень репозитория.
+
+Файл `.nojekyll` отключает Jekyll-обработку на GitHub Pages. Все внутренние ссылки и assets должны оставаться относительными, чтобы одинаково работать в корне Cloudflare и в подпути `/lead-demo/` GitHub Pages.
+
+Проверка путей не требует установки зависимостей:
+
+```powershell
+node .\scripts\validate-static-paths.mjs
+```
 
 ## Добавление нового клиента
 
@@ -14,6 +28,7 @@ URL формируется так:
 
 ```text
 https://lead-demo.pages.dev/demos/<slug>/
+https://artem112art.github.io/lead-demo/demos/<slug>/
 ```
 
 Не копируйте папку другого клиента как обязательный шаблон. Новый demo можно и нужно создавать полностью с нуля, если бизнес-контекст требует другой структуры, композиции или визуального языка. Переиспользуйте только нейтральные технические практики: responsive, semantic HTML, accessibility, SEO/meta и безопасную работу со ссылками и локальными assets.
